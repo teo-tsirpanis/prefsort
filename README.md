@@ -10,7 +10,7 @@ Have you ever been in a situation where you have to rank things based on some cr
 
 ## Usage guide for dummies 😛
 
-1. Download prefsort and extract it to a folder.
+1. [Download](https://github.com/teo-tsirpanis/prefsort/releases) prefsort and extract it to a folder.
 
 2. Open the file named `input.txt` and write at each line the items you want to rank.
 
