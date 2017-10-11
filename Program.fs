@@ -29,21 +29,14 @@ let curry f x1 x2 = f(x1, x2)
 
 let uncurry f (x1, x2) = f x1 x2
 
-let mutable counter = 0u
-
 let rec prefSort x1 x2 =
     eprintf "Do You prefer %s (1), or %s (2)? Write your answer: " x1 x2
     match Console.ReadLine() with
     | "0" ->
         eprintfn "Can't decide, right? We have lots of things in common! :-p"
-        counter <- counter + 1u
         0
-    | "1" ->
-        counter <- counter + 1u
-        -1
-    | "2" ->
-        counter <- counter + 1u
-        1
+    | "1" -> -1
+    | "2" -> 1
     | _ ->
         eprintfn "Invalid answer. :-("
         prefSort x1 x2
@@ -60,8 +53,8 @@ let main argv =
     |> Seq.filter (String.IsNullOrWhiteSpace >> not)
     |> Seq.sortWith prefSort
     |> Seq.indexed
-    |> Seq.map (uncurry <| sprintf "%d: %s")
-    |> Seq.append [sprintf "After %d questions, here are the results: %s" counter Environment.NewLine]
-    |> curry File.WriteAllLines ""
+    |> Seq.map (fun (c, s) -> sprintf "%d: %s" (c + 1) s)
+    |> curry File.WriteAllLines outputFile
 
+    printfn "Success. Check out the results in %s." outputFile
     0
