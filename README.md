@@ -1,6 +1,6 @@
 # prefsort
 
-[![AppVeyor](https://img.shields.io/appveyor/ci/teo-tsirpanis/prefsort.svg?style=flat-square)](https://github.com/teo-tsirpanis/prefsort)
+[![AppVeyor](https://img.shields.io/appveyor/ci/teo-tsirpanis/prefsort.svg?style=flat-square)](https://ci.appveyor.com/project/teo-tsirpanis/prefsort)
 
 A program that sorts items, based on subjective criteria.
 
