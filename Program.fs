@@ -56,6 +56,7 @@ let main argv =
     inputFile
     |> File.ReadAllLines
     |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+    |> Seq.filter (Seq.head >> ((=) '#'))
     |> Seq.sortWith prefSort
     |> addNumbers shouldAdd
     |> curry File.WriteAllLines outputFile

@@ -1,3 +1,5 @@
+# Blank lines and lines that start with the number sign are ignored
+
 One
 Two
 Three
