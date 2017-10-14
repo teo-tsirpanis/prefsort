@@ -18,7 +18,7 @@ type PrefSortExiter() =
                 exit 1
 
 type Arguments =
-    | [<Unique; AltCommandLine("-i")>] InputFile of string
+    | [<Unique; MainCommand>] InputFile of string
     | [<Unique; AltCommandLine("-o")>] OutputFile of string
     | [<Unique>] NoNumbers
     interface IArgParserTemplate with
@@ -70,8 +70,8 @@ let addNumbers =
 let main argv =
     let parser = ArgumentParser.Create("prefsort", "Help requested: ", errorHandler = PrefSortExiter())
     let results = parser.ParseCommandLine()
-    let inputFile = results.GetResult (<@ InputFile @>, defaultValue = "input.txt")
-    let outputFile = results.GetResult (<@ OutputFile @>, defaultValue = "output.txt")
+    let inputFile = results.GetResult (<@ InputFile @>)
+    let outputFile = results.GetResult (<@ OutputFile @>, defaultValue = Path.ChangeExtension(inputFile, "out.txt"))
     let shouldAdd = results.Contains <@ NoNumbers @> |> not
     let sortFunc = makeMemoizablePrefSort()
 
