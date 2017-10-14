@@ -3,6 +3,7 @@
 
 open Argu
 open System
+open System.Collections.Generic
 open System.IO
 
 type PrefSortExiter() =
@@ -31,14 +32,34 @@ let curry f x1 x2 = f(x1, x2)
 
 let uncurry f (x1, x2) = f x1 x2
 
-let rec prefSort x1 x2 =
-    eprintf "Do You prefer %s (1), or %s (2)? Write your answer: " x1 x2
-    match Console.ReadLine() with
-    | "1" -> -1
-    | "2" -> 1
-    | _ ->
-        eprintfn "Invalid answer. :-("
-        prefSort x1 x2
+let swap (x1, x2) = x2, x1
+
+let sort2 (x1, x2) =
+    if x1 > x2 then
+        x2, x1
+    else
+        x1, x2
+
+let rec makeMemoizablePrefSort () =
+    let dict = Dictionary()
+    let addDict key value =
+        dict.Add (key, value)
+        dict.Add (swap key, -value)
+    let hasDict key =
+        match dict.TryGetValue key with
+        | (true, x) -> Some x
+        | (false, _) -> None
+    let rec prefSort x =
+        match hasDict x with
+        | Some x -> x
+        | None ->
+            x ||> eprintf "Do You prefer %s (1), or %s (2)? Write your answer: "
+            match Console.ReadLine() with
+            | "1" -> addDict x -1
+            | "2" -> addDict x 1
+            | _ -> eprintfn "Invalid answer. :-("
+            prefSort x
+    curry prefSort
 
 let addNumbers =
     function
@@ -51,13 +72,14 @@ let main argv =
     let results = parser.ParseCommandLine()
     let inputFile = results.GetResult (<@ InputFile @>, defaultValue = "input.txt")
     let outputFile = results.GetResult (<@ OutputFile @>, defaultValue = "output.txt")
-    let shouldAdd = results.Contains <@ NoNumbers @>
+    let shouldAdd = results.Contains <@ NoNumbers @> |> not
+    let sortFunc = makeMemoizablePrefSort()
 
     inputFile
     |> File.ReadAllLines
     |> Seq.filter (String.IsNullOrWhiteSpace >> not)
     |> Seq.filter (Seq.head >> ((<>) '#'))
-    |> Seq.sortWith prefSort
+    |> Seq.sortWith sortFunc
     |> addNumbers shouldAdd
     |> curry File.WriteAllLines outputFile
 
