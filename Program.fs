@@ -1,5 +1,6 @@
-﻿// This program was written by Theodore Tsirpanis in less than an hour.
-// The author does bestow this program to the public domain, specifically under the CC0 license (https://creativecommons.org/publicdomain/zero/1.0/legalcode).
+﻿// This program was written by Theodore Tsirpanis in winter 2017.
+// The author does bestow this program to the public domain,
+// specifically under the CC0 license (https://creativecommons.org/publicdomain/zero/1.0/legalcode).
 
 open Argu
 open System
@@ -8,8 +9,8 @@ open System.IO
 
 type PrefSortExiter() =
     interface IExiter with
-        member __.Name = "paket exiter"
-        member __.Exit (msg,code) =
+        member _.Name = "prefsort exiter"
+        member _.Exit (msg,code) =
             if code = ErrorCode.HelpText then
                 eprintfn "%s" msg
                 exit 0
@@ -28,60 +29,60 @@ type Arguments =
             | OutputFile _ -> "The file that will contain the sorted items. Writes to stdout if not specified."
             | NoNumbers -> "Numbers will not be prepended to the output."
 
-let curry f x1 x2 = f(x1, x2)
-
-let uncurry f (x1, x2) = f x1 x2
-
-let swap (x1, x2) = x2, x1
-
-let sort2 (x1, x2) =
-    if x1 > x2 then
-        x2, x1
-    else
-        x1, x2
-
 let rec makeMemoizablePrefSort () =
     let dict = Dictionary()
-    let addDict key value =
+    let addDict ((x1, x2) as key) value =
         dict.Add (key, value)
-        dict.Add (swap key, -value)
+        dict.Add ((x2, x1), -value)
+        value
     let hasDict key =
         match dict.TryGetValue key with
         | (true, x) -> Some x
         | (false, _) -> None
     let rec prefSort x =
-        match hasDict x with
-        | Some x -> x
-        | None ->
+        match dict.TryGetValue x with
+        | true, x -> x
+        | false, _ ->
             x ||> eprintf "Do You prefer %s (1), or %s (2)? Write your answer: "
             match Console.ReadLine() with
+            | "0" -> 0
             | "1" -> addDict x -1
             | "2" -> addDict x 1
-            | _ -> eprintfn "Invalid answer. :-("
-            prefSort x
-    curry prefSort
+            | _ ->
+                eprintfn "Invalid answer. :-("
+                prefSort x
+    {new IComparer<string> with member _.Compare(x1, x2) = prefSort(x1, x2)}
 
-let addNumbers =
-    function
-    | true -> Seq.indexed >> Seq.map (fun (c, s) -> sprintf "%d. %s" (c + 1) s)
-    | false -> id
+let writeOutput noNumbers outFile (lines: string[]) =
+    if noNumbers then
+        File.WriteAllLines(outFile, lines)
+    else
+        use sr = new StreamWriter(outFile)
+        let mutable i = 1
+        for line in lines do
+            sr.Write i
+            i <- i + 1
+            sr.Write ". "
+            sr.WriteLine line
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let parser = ArgumentParser.Create("prefsort", "Help requested: ", errorHandler = PrefSortExiter())
     let results = parser.ParseCommandLine()
-    let inputFile = results.GetResult (<@ InputFile @>)
-    let outputFile = results.GetResult (<@ OutputFile @>, defaultValue = Path.ChangeExtension(inputFile, "out.txt"))
-    let shouldAdd = results.Contains <@ NoNumbers @> |> not
-    let sortFunc = makeMemoizablePrefSort()
+    let inputFile = results.GetResult (InputFile)
+    let outputFile = results.GetResult (OutputFile, defaultValue = Path.ChangeExtension(inputFile, "out.txt"))
+    let noNumbers = results.Contains NoNumbers
+    let comparer = makeMemoizablePrefSort()
 
-    inputFile
-    |> File.ReadAllLines
-    |> Seq.filter (String.IsNullOrWhiteSpace >> not)
-    |> Seq.filter (Seq.head >> ((<>) '#'))
-    |> Seq.sortWith sortFunc
-    |> addNumbers shouldAdd
-    |> curry File.WriteAllLines outputFile
+    let lines =
+        inputFile
+        |> File.ReadLines
+        |> Seq.filter (fun x -> not (String.IsNullOrWhiteSpace x || x.[0] = '#'))
+        |> Array.ofSeq
+
+    Array.Sort(lines, comparer)
+
+    writeOutput noNumbers outputFile lines
 
     printfn "Success. Check out the results in %s." outputFile
     0

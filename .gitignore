@@ -290,3 +290,4 @@ __pycache__/
 prefsort-*/
 prefsort-*.zip
 output.txt
+.ionide/symbolCache.db
